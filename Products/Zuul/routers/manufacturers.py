@@ -42,8 +42,11 @@ class ManufacturersRouter(TreeRouter):
         """
         facade = self._getFacade()
         facade.removeProducts(products)
-        audit('UI.Manufacturers.RemoveProducts', products=products)        
-        return DirectResponse.succeed()
+        audit('UI.Manufacturers.RemoveProducts', products=products)
+        return DirectResponse.succeed(
+            "Job to remove product(s) and update product class for "
+            "instances has been scheduled."
+        )
 
     @serviceConnectionError        
     @require('Manage DMD')    
@@ -53,11 +56,15 @@ class ManufacturersRouter(TreeRouter):
         """
         facade = self._getFacade()
         oldData = facade.getProductData(params['uid'], params['oldname'])[0]
-        facade.editProduct(params)
-
+        scheduled = facade.editProduct(params)
         audit('UI.Manufacturers.editProduct', params['uid'],
               data_=params, oldData_=oldData)
-
+        if scheduled:
+            return DirectResponse.succeed(
+                "Job to edit product and update product class for its "
+                "instances has been scheduled. Wait for finish to add "
+                "more changes to this product."
+            )
         return DirectResponse.succeed()
 
     @serviceConnectionError
@@ -143,8 +150,12 @@ class ManufacturersRouter(TreeRouter):
         """
         facade = self._getFacade()
         facade.moveProduct(moveFrom, moveTarget, ids)
-        audit('UI.Manufacturers.MoveProduct', movedProducts=ids, target=moveTarget)            
-        return DirectResponse.succeed()
+        audit('UI.Manufacturers.MoveProduct', movedProducts=ids, target=moveTarget)
+        return DirectResponse.succeed(
+            "Job to move product(s) and update product class for "
+            "instances has been scheduled. Wait for finish to add "
+            "more changes to this product(s)."
+        )
         
     def returnTree(self, id):
         """
